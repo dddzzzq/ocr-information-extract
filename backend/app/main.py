@@ -1,30 +1,38 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import extraction
+from app.routers import extraction, posters
+from app import models
+from app.database import engine
+from fastapi.staticfiles import StaticFiles # 导入静态文件
+import os 
 
-# 创建 FastAPI 应用实例
+# 为上传的图片创建存储目录
+UPLOAD_DIR = "static/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title="校园海报信息提取系统 API",
-    description="一个使用 OCR 和 LLM 技术从图片中提取信息的 API (重构版)",
-    version="1.0.0"
+    description="V3.1 - 支持图片存储",
+    version="3.1.0"
 )
 
-# 配置 CORS 中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 包含（注册）来自 routers 目录的路由
-# 所有 extraction.py 中的路由都会被加上 /api/v1 的前缀
-app.include_router(extraction.router, prefix="/api/v1", tags=["Extraction"])
+# 挂载(Mount)静态文件目录
+# 这使得 /static/uploads/filename.jpg 可以通过 http://.../static/uploads/filename.jpg 访问
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+app.include_router(extraction.router, prefix="/api/v1", tags=["1. Extraction (提取)"])
+app.include_router(posters.router, prefix="/api/v1", tags=["2. Posters CRUD (管理)"])
 
 @app.get("/", summary="API 健康检查", tags=["Root"])
 def read_root():
-    """
-    根路径，用于简单的健康检查。
-    """
-    return {"status": "ok", "message": "欢迎使用校园海报信息提取系统 API"}
+    return {"status": "ok", "message": "欢迎使用校园海报信息提取系统 API v3.1"}

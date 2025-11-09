@@ -1,4 +1,7 @@
 fastapi
-uvicorn[standard]
-python-multipart
-pydantic
+uvicorn
+requests
+opencv-python-headless
+paddleocr
+paddlepaddle
+sqlalchemy
